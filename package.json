@@ -1,0 +1,23 @@
+{
+  "name": "tractor-online",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "网页版 4/5/6 人在线拖拉机（升级）扑克游戏 - Socket.IO 实时对战",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test test/*.test.js",
+    "sim": "node test/simulate.js"
+  },
+  "keywords": ["tractor", "shengji", "poker", "socket.io", "multiplayer"],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

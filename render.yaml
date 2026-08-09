@@ -1,0 +1,15 @@
+# Render Blueprint —— 一键部署
+# 在 Render 控制台 "New" → "Blueprint" → 关联本仓库，Render 会按此文件建服务。
+services:
+  - type: web
+    name: tractor-online
+    runtime: docker
+    plan: free
+    region: oregon      # 可改 singapore / frankfurt 等
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: NODE_ENV
+        value: production

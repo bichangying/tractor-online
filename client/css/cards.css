@@ -1,0 +1,58 @@
+.card {
+  --cw: 62px;
+  --ch: 88px;
+  position: relative;
+  width: var(--cw); height: var(--ch);
+  border-radius: 7px;
+  background: linear-gradient(160deg, #fffdf7 0%, #f2eee1 100%);
+  border: 1px solid rgba(0, 0, 0, .28);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .35);
+  color: #1d2321;
+  flex: 0 0 auto;
+  user-select: none;
+  transition: transform .13s ease, box-shadow .13s ease, filter .13s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.card .r { font-size: calc(var(--cw) * .40); font-weight: 800; line-height: 1; letter-spacing: -.5px; }
+.card .s { font-size: calc(var(--cw) * .34); line-height: 1.05; }
+.card .corner { position: absolute; top: 3px; left: 4px; font-size: calc(var(--cw) * .21); font-weight: 700; line-height: 1; text-align: center; }
+.card.red { color: #cf2f2f; }
+.card.black { color: #16211c; }
+
+.card.joker .r { font-size: calc(var(--cw) * .27); writing-mode: vertical-rl; letter-spacing: 3px; }
+.card.joker.big { color: #cf2f2f; }
+.card.joker.small { color: #16211c; }
+
+.card.back {
+  background:
+    repeating-linear-gradient(45deg, #1f4a7a 0 6px, #21548c 6px 12px);
+  border-color: rgba(255,255,255,.25);
+}
+.card.back::after {
+  content: ''; position: absolute; inset: 5px; border: 1px solid rgba(255,255,255,.35); border-radius: 4px;
+}
+
+.card.sm { --cw: 42px; --ch: 60px; }
+.card.xs { --cw: 26px; --ch: 37px; border-radius: 4px; }
+
+.card.pickable { cursor: pointer; }
+.card.pickable:hover { transform: translateY(-10px); box-shadow: 0 8px 16px rgba(0,0,0,.45); z-index: 5; }
+.card.picked { transform: translateY(-22px); box-shadow: 0 12px 20px rgba(0,0,0,.5); z-index: 6; }
+.card.picked::before {
+  content: ''; position: absolute; inset: -2px; border-radius: 8px; border: 2px solid var(--gold);
+  pointer-events: none;
+}
+.card.dim { filter: brightness(.62) saturate(.7); }
+.card.pointy { box-shadow: 0 0 0 2px rgba(233,196,106,.55), 0 2px 6px rgba(0,0,0,.4); }
+
+.card-row { display: flex; align-items: flex-end; }
+.card-row .card + .card { margin-left: -14px; }
+.card-row.tight .card + .card { margin-left: -22px; }
+.card-row.sm .card + .card { margin-left: -10px; }
+.card-row.stack .card + .card { margin-left: -30px; }
+
+@keyframes dealIn { from { opacity: 0; transform: translateY(-40px) scale(.7); } }
+.card.deal-anim { animation: dealIn .22s ease; }
+
+@keyframes playPop { from { opacity: 0; transform: scale(.75) translateY(14px); } }
+.played .card { animation: playPop .18s ease; }

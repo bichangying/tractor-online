@@ -1,0 +1,9 @@
+node_modules
+bin
+data
+.workbuddy
+.git
+.gitignore
+*.log
+npm-debug.log*
+.DS_Store
