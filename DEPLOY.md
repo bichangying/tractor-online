@@ -19,7 +19,7 @@ npx localtunnel --port 3000
 - 把 `https://xxxx.loca.lt` 发给朋友即可。
 - ⚠️ 首次打开会有一次"我不是机器人"验证页；本机需保持开机、隧道进程不能关。
 
-> 当前环境已为你跑了一条：`https://moody-taxes-cover.loca.lt`（随时可能变化，以终端输出为准）。
+> 注：本方式免费额度不稳定、易掉线且首访有验证页，仅作兜底；优先用方式二/四。
 
 ## 方式二：localhost.run（最省事，零下载，推荐先试）
 
@@ -30,14 +30,22 @@ npx localtunnel --port 3000
 npm start
 
 # 2) 另开一个终端，建立公网隧道（Windows 10/11 / Git Bash 自带 ssh）
-ssh -R 80:localhost:3000 nokey@localhost.run
+ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -R 80:localhost:3000 nokey@localhost.run
 # 输出类似：https://xxxx.lhr.life   ← 把这个发朋友
+#
+# 参数说明：
+#   -o StrictHostKeyChecking=accept-new  首次连接自动接受主机密钥，
+#       避免在无终端（后台/脚本/自动化）环境下因 "Host key verification failed" 直接退出。
+#   -o UserKnownHostsFile=/dev/null      跳过写入 known_hosts，避免 "Could not create directory .ssh" 报错。
+#   如果是普通交互终端首次连接，也可只写  ssh -R 80:localhost:3000 nokey@localhost.run ，
+#   按提示输入 yes 即可（之后本机会记住密钥）。
 ```
 
 - 免费、免账号、不弹验证页，朋友手机直接开链接就能玩。
 - 前提：你这台电脑**玩的时候保持开机**、隧道终端别关。
 - 匿名子域名每次重连会变；要固定域名去 localhost.run 注册并加 key（仍免费）。
 - 卡死了就重跑第 2 步，会换一个新地址。
+- 嫌两步麻烦可用仓库根目录的一键脚本：`bash play.sh`（自动起服务 + 打通隧道）。
 
 ## 方式三：cloudflared（更稳定，免注册，需本机装客户端）
 
@@ -55,7 +63,7 @@ cloudflared tunnel --url http://localhost:3000
 - 同样需先 `npm start`，且本机保持开机。
 - 想要固定域名需登录 cloudflared 账号（`cloudflared tunnel login`）。
 
-## 方式三：部署到云平台（永久 24 小时在线，推荐）
+## 方式四：部署到云平台（永久 24 小时在线，推荐）
 
 适合长期运营。仓库已配好 `Dockerfile` / `.dockerignore` / `render.yaml` / `railway.json`，任选一个免费平台：
 
