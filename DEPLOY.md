@@ -83,6 +83,31 @@ https://render.com/deploy?repo=https://github.com/bichangying/tractor-online
 3. Render 读取 `render.yaml` 自动建好 Web 服务（free 计划，**不需要绑信用卡**）。
 4. 首次构建约 3-5 分钟，完成后得到固定网址 `https://tractor-online.onrender.com`。
 
+#### 路径 B：公开仓库 URL 直连（**不需要 GitHub 授权**，国内网络卡 OAuth 时用这个）
+
+Render 官方支持"不连 Git 账号，直接填公开仓库地址"。适用于 GitHub OAuth 登录跳转失败、
+授权页打不开的情况。
+
+1. 用**邮箱**注册 https://dashboard.render.com/register （不选 GitHub 登录，绕开 OAuth）。
+2. Dashboard → **New → Web Service**。
+3. 在仓库选择区找到 **"Public Git Repository"** 输入框，粘贴：
+   ```
+   https://github.com/bichangying/tractor-online
+   ```
+4. 配置（Render 检测到 `Dockerfile` 后大多会自动填好）：
+   | 项 | 值 |
+   |---|---|
+   | Name | `tractor-online` |
+   | Region | **Singapore** |
+   | Branch | `main` |
+   | Runtime / Language | **Docker** |
+   | Instance Type | **Free** |
+   | Health Check Path | `/api/health` |
+5. 点 **Create Web Service**，等 3-5 分钟。
+
+⚠️ 此路径的**唯一限制**：不能自动部署。以后改了代码，要去 Render 面板点
+**Manual Deploy → Deploy latest commit** 手动触发。（Blueprint / 连 Git 账号方式才有自动部署。）
+
 **免费计划实况（2026-08 核实）**
 | 项目 | 额度 |
 |---|---|
@@ -160,6 +185,56 @@ Set-DnsClientServerAddress -InterfaceIndex 10 -ResetServerAddresses
 Enable-NetAdapterBinding -Name 'WLAN' -ComponentID ms_tcpip6
 Clear-DnsClientCache
 ```
+
+### 现象：GitHub 时通时不通（间歇抖动），或 Render 页面打不开
+
+**第一步：先分清是"网络不通"还是"浏览器问题"。** 命令行测一遍：
+```bash
+curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 20 https://render.com/
+curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 20 https://github.com/
+```
+- 命令行 **200** 但浏览器打不开 → 是**浏览器层**问题：清缓存、彻底退出浏览器重开
+  （旧的失效连接会被复用）、或换个浏览器 / 无痕窗口。
+- 命令行也 **000** → 往下看。
+
+**第二步：判断是不是 DNS 抖动。** 用 `--resolve` 强制指定 IP 绕过 DNS：
+```bash
+curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 \
+  --resolve github.com:443:20.205.243.166 https://github.com/
+```
+若 `--resolve` 是 200、直连是 000 → DNS/解析链路抖动，写 hosts 锁定 IP 可缓解。
+
+**修复：写 hosts 锁定 GitHub IP**（管理员 PowerShell）
+```powershell
+$hosts = "$env:SystemRoot\System32\drivers\etc\hosts"
+Copy-Item $hosts "D:\hosts_backup.txt" -Force     # 先备份
+Add-Content -Path $hosts -Encoding ASCII -Value @"
+
+# ===== GitHub accel =====
+20.205.243.166  github.com
+20.205.243.168  api.github.com
+20.205.243.165  codeload.github.com
+185.199.110.133 raw.githubusercontent.com
+185.199.110.133 objects.githubusercontent.com
+185.199.111.215 github.githubassets.com
+185.199.110.133 avatars.githubusercontent.com
+"@
+ipconfig /flushdns
+```
+IP 会变，失效时用 DoH 重新查（不受本地 DNS 干扰）：
+```bash
+curl -s "https://dns.alidns.com/resolve?name=github.com&type=A"
+```
+还原：删掉 hosts 里 `# ===== GitHub accel =====` 那一段即可。
+
+> 实测记录（2026-08-11）：写 hosts 后 github.com 从"间歇 000/20s 超时"变为稳定
+> **200 / 0.65s**；但 `raw.githubusercontent.com`（185.199.x 段）仍不稳定——
+> 这**不影响**网页操作和云平台部署（平台是从它自己的服务器拉代码，与你本地网络无关）。
+
+### 现象：Render 登录/授权页卡住
+Render 默认引导用 GitHub OAuth 登录，国内网络下这一跳容易失败。
+绕开办法：用**邮箱注册**，再走上面「Render → 路径 B：公开仓库 URL 直连」，
+全程不碰 github.com 的授权跳转。
 
 ### 现象：脚本误判"服务启动失败"，却报 `EADDRINUSE`
 原因：某些沙箱/终端里 `curl -s -o /dev/null` 会返回**假的非零退出码**（23），

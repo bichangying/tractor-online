@@ -9,3 +9,4 @@ data/replays/*.json
 # 运行时产物
 CURRENT_URL.txt
 网络配置备份_还原命令.txt
+hosts_backup_*.txt
