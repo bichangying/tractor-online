@@ -68,17 +68,45 @@ cloudflared tunnel --url http://localhost:3000
 
 适合长期运营。仓库已配好 `Dockerfile` / `.dockerignore` / `render.yaml` / `railway.json`，任选一个免费平台：
 
-### Render（最简单）
-1. 注册 https://render.com （可用 GitHub 登录）。
-2. Dashboard → New → Blueprint → 关联本仓库（或上传代码）。
-3. Render 读取 `render.yaml` 自动建好 Web 服务（free 计划）。
-4. 部署完成后得到固定网址 `https://tractor-online.onrender.com`，随时可玩。
+### Render（最简单，首选）
 
-### Railway
+仓库地址：https://github.com/bichangying/tractor-online
+
+一键部署链接（点开直接按 `render.yaml` 建服务）：
+```
+https://render.com/deploy?repo=https://github.com/bichangying/tractor-online
+```
+
+或手动：
+1. 注册 https://render.com （用 GitHub 登录最快）。
+2. Dashboard → **New → Blueprint** → 选中 `tractor-online` 仓库。
+3. Render 读取 `render.yaml` 自动建好 Web 服务（free 计划，**不需要绑信用卡**）。
+4. 首次构建约 3-5 分钟，完成后得到固定网址 `https://tractor-online.onrender.com`。
+
+**免费计划实况（2026-08 核实）**
+| 项目 | 额度 |
+|---|---|
+| 实例时长 | 750 小时/月（够一个服务常驻） |
+| 内存 / CPU | 512MB / 0.1 vCPU 共享 |
+| 流量 | 100GB/月 |
+| 构建分钟 | 500 分钟/月 |
+| 信用卡 | 不需要 |
+
+**唯一的坑：15 分钟无访问会休眠**，下一次请求要等 **30-60 秒**冷启动。
+- 对打牌影响不大：第一个人开链接等一下，之后只要有人在玩（Socket.IO 长连接算活跃流量）就不会休眠。
+- 想彻底免冷启动：用 https://cron-job.org （免费）每 10 分钟 GET 一次
+  `https://tractor-online.onrender.com/api/health` 保活；或升级 $7/月。
+
+**region 已设为 `singapore`**：离中国最近，延迟约 60-80ms；默认的 `oregon` 要 180ms+，打牌会有明显延迟感。
+
+### Railway（备选，注意要绑卡）
 1. 注册 https://railway.app 。
-2. New Project → Deploy from GitHub repo（或空项目后 `railway up`）。
+2. New Project → Deploy from GitHub repo → 选 `tractor-online`。
 3. 平台按 `railway.json` 用 Dockerfile 构建并启动。
 4. 生成的域名即为公网地址。
+
+⚠️ Railway 已**没有长期免费档**，只有一次性 $5 试用额度，用完需绑卡付费。
+只想免费的话用 Render。
 
 ### 通用 Docker 部署（自有服务器 / VPS）
 ```bash

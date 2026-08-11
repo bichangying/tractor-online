@@ -5,7 +5,7 @@ services:
     name: tractor-online
     runtime: docker
     plan: free
-    region: oregon      # 可改 singapore / frankfurt 等
+    region: singapore   # 离中国最近，延迟最低（免费计划可选 oregon/frankfurt/ohio/virginia/singapore）
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
     envVars:
