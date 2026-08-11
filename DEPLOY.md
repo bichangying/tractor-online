@@ -43,9 +43,10 @@ ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -R 80:lo
 
 - 免费、免账号、不弹验证页，朋友手机直接开链接就能玩。
 - 前提：你这台电脑**玩的时候保持开机**、隧道终端别关。
-- 匿名子域名每次重连会变；要固定域名去 localhost.run 注册并加 key（仍免费）。
-- 卡死了就重跑第 2 步，会换一个新地址。
-- 嫌两步麻烦可用仓库根目录的一键脚本：`bash play.sh`（自动起服务 + 打通隧道）。
+- 子域名每次重连都会变（实测带 SSH key 连接也一样会变，固定域名是付费功能）。
+- 隧道**空闲太久会被服务端踢掉**（`tunnel inactivity timeout`），这是它最常见的掉线原因。
+- ✅ **推荐直接用一键脚本**：`bash play.sh` —— 自动起服务 + 打通隧道 +
+  每 45 秒保活心跳（防空闲掉线）+ 断线自动重连，当前地址实时写入 `CURRENT_URL.txt`。
 
 ## 方式三：cloudflared（更稳定，免注册，需本机装客户端）
 
@@ -93,3 +94,54 @@ docker run -d -p 3000:3000 --name tractor tractor-online
 - Socket.IO 的 CORS 设为 `origin: '*'`，跨域（部署域名 ≠ 客户端来源）也能连。
 - 回放文件写在 `data/replays/`（运行时生成，已在 `.dockerignore` 中排除构建期）。
 - 免费平台的免费实例会"休眠"，首访可能慢几秒，属正常。
+
+---
+
+## 故障排查（踩过的坑，按现象查）
+
+### 现象：隧道跑一会儿就断，朋友进不去
+原因：localhost.run 对**空闲隧道**会主动断开，日志里能看到
+`Received disconnect ... tunnel inactivity timeout`。
+解决：用 `bash play.sh`。脚本内置每 45 秒一次保活心跳 + 断线 5 秒自动重连，
+并把当前地址写入 `CURRENT_URL.txt`（重连后地址会变，以该文件/终端输出为准）。
+
+### 现象：ssh 建隧道报 `Host key verification failed`
+原因：后台运行无 TTY，无法交互确认主机密钥。
+解决：命令必须带
+`-o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null`。
+
+### 现象：GitHub / 外网页面打开转圈十几秒后失败（"一到关键步骤就断网"）
+根因：**IPv6 DNS 卡死**，不是被墙。典型特征——
+```bash
+curl -4 https://github.com/   # 200，1 秒      ← IPv4 正常
+curl    https://github.com/   # 000，超时 15 秒 ← 默认走 IPv6 卡住
+```
+若本机 DNS 服务器是 `fe80::1`（路由器的 IPv6 地址），它对 AAAA 查询不响应，
+浏览器每个请求都要空等回退，表现为页面加载到一半就断。
+
+修复（管理员 PowerShell，`10` 换成你的网卡 InterfaceIndex）：
+```powershell
+Get-NetAdapter | Where-Object {$_.Status -eq 'Up'}          # 先查 InterfaceIndex
+Set-DnsClientServerAddress -InterfaceIndex 10 -ServerAddresses 223.5.5.5,119.29.29.29
+Disable-NetAdapterBinding -Name 'WLAN' -ComponentID ms_tcpip6
+Clear-DnsClientCache
+```
+还原：
+```powershell
+Set-DnsClientServerAddress -InterfaceIndex 10 -ResetServerAddresses
+Enable-NetAdapterBinding -Name 'WLAN' -ComponentID ms_tcpip6
+Clear-DnsClientCache
+```
+
+### 现象：脚本误判"服务启动失败"，却报 `EADDRINUSE`
+原因：某些沙箱/终端里 `curl -s -o /dev/null` 会返回**假的非零退出码**（23），
+导致 `if curl ...` 判断为失败，脚本以为服务没起，重复启动就撞上端口占用。
+解决：健康检查不要用 `-o /dev/null`，改成判断响应内容：
+```bash
+curl -s --max-time 3 "http://127.0.0.1:3000/api/health" | grep -q '"ok"'
+```
+
+### 关于 localhost.run 的固定域名
+实测：**带 SSH 密钥连接也不会给固定子域名**（两次连接分别得到
+`a34cff0eae646e` / `b43a04d115bc02`）。固定域名是付费功能。
+想要永久不变的地址，走上面的「方式四：部署到云平台」。
