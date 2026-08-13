@@ -80,6 +80,7 @@ while true; do
       -o ExitOnForwardFailure=yes \
       -R "80:localhost:$PORT" nokey@localhost.run 2>&1 |
   while IFS= read -r line; do
+    line=${line%$'\r'}
     echo "$line" >> "$LOG_FILE"
     url=$(printf '%s' "$line" | grep -oE 'https://[a-z0-9-]+\.lhr\.life' | head -1)
     if [ -n "${url:-}" ]; then
