@@ -64,11 +64,35 @@ cloudflared tunnel --url http://localhost:3000
 - 同样需先 `npm start`，且本机保持开机。
 - 想要固定域名需登录 cloudflared 账号（`cloudflared tunnel login`）。
 
-## 方式四：部署到云平台（永久 24 小时在线，推荐）
+## 方式四：部署到云平台（免本机开机、固定地址，推荐长期）
 
-适合长期运营。仓库已配好 `Dockerfile` / `.dockerignore` / `render.yaml` / `railway.json`，任选一个免费平台：
+适合长期运营，仓库已配好 `Dockerfile` / `.dockerignore`，以及各平台蓝图：Render(`render.yaml`)、Koyeb(`koyeb.yaml`)、Railway(`railway.json`)。
+**主推 Zeabur（免绑卡、中文控制台、香港/新加坡节点对中国延迟最低）；Render、Koyeb 作备用。**
 
-### Render（最简单，首选）
+### Zeabur（首选：免绑卡、中国延迟最低、中文控制台）
+
+仓库地址：https://github.com/bichangying/tractor-online
+
+Zeabur 是台湾团队出品的 Git 一键部署 PaaS，与 Render 同类，对国内用户更友好。
+
+1. 打开 https://zeabur.com ，用 **GitHub 登录**（**免绑卡**，注册即用）。
+2. 控制台 **Create Project** → 选**免费区域：香港 / 新加坡**（离中国最近，延迟最低）。
+3. **Add Service** → **Deploy from GitHub repo** → 选 `tractor-online`（分支 `main`）。
+4. Zeabur **自动识别**框架：检测到 `Dockerfile` 会用 Docker 构建，或识别 Node 跑 `npm install` + `npm start`。两种都行，无需配置文件。
+5. 构建完成自动分配**固定子域名**（形如 `https://tractor-online.zeabur.app`）+ 免费 SSL，直接发朋友。
+
+**免费档实况（2026-08 核实）**
+| 项目 | 额度 |
+|---|---|
+| 信用卡 | **不需要** |
+| 节点 | 香港 / 新加坡 / 东京（免费区，中国延迟最低） |
+| 额度 | **$5/月 免费额度**，1 vCPU / 2GB 内存每服务 |
+| 休眠 | 空闲自动休眠，冷启动仅几秒（比 Render 30-60s 快） |
+| 子域名 | 固定 Zeabur 子域名（免费档不支持自定义域名） |
+
+⚠️ **关键策略：让服务休眠，不要保活 ping。** Zeabur 是额度制（$5/月），若像 Render 那样用 cron 每 10 分钟 ping 保活，常驻会烧光额度导致停机。正确做法：空闲让它睡，朋友打开时冷启动几秒即可，永久免费。
+
+### Render（备用一）
 
 仓库地址：https://github.com/bichangying/tractor-online
 
@@ -124,14 +148,17 @@ Render 官方支持"不连 Git 账号，直接填公开仓库地址"。适用于
 
 **region 已设为 `singapore`**：离中国最近，延迟约 60-80ms；默认的 `oregon` 要 180ms+，打牌会有明显延迟感。
 
-### Railway（备选，注意要绑卡）
-1. 注册 https://railway.app 。
-2. New Project → Deploy from GitHub repo → 选 `tractor-online`。
-3. 平台按 `railway.json` 用 Dockerfile 构建并启动。
-4. 生成的域名即为公网地址。
+### Koyeb（备用二：免绑卡、原生 WebSocket）
 
-⚠️ Railway 已**没有长期免费档**，只有一次性 $5 试用额度，用完需绑卡付费。
-只想免费的话用 Render。
+仓库已配好 `koyeb.yaml`，Koyeb 读到即按蓝图建服务。
+
+1. 注册 https://koyeb.com （GitHub 登录，免绑卡）。
+2. **Create App** → 关联 GitHub 仓库 `tractor-online`（分支 `main`）。
+3. Koyeb 检测到 `koyeb.yaml` 自动建好服务（Node 构建、`fra` 节点、nano 实例、常驻 1 实例、端口 3000、健康检查 `/api/health`）。
+4. 部署完得到固定地址 `https://tractor-online.koyeb.app`。
+
+⚠️ 节点在法兰克福/华盛顿，**中国延迟 200ms+**，打牌偶觉卡顿；免费 nano 仅 512MB/0.1CPU。
+仅当 Zeabur / Render 都不满意时考虑。（Railway 已无长期免费档、需绑卡，不推荐免费场景。）
 
 ### 腾讯云轻量应用服务器（国内最稳，推荐给国内朋友群）
 
