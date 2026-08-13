@@ -4,7 +4,7 @@ services:
   - type: web
     name: tractor-online
     runtime: docker
-    plan: free
+    plan: free   # 必须显式写 free；省略会默认 starter(付费)并弹绑卡，切勿删除
     region: singapore   # 离中国最近，延迟最低（免费计划可选 oregon/frankfurt/ohio/virginia/singapore）
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
