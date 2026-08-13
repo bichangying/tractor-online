@@ -17,6 +17,17 @@ export function registerLobby(io, socket, rm, ctx) {
     });
     if (!r.ok) return ack?.(r);
     joinRoom(io, socket, rm, ctx, r.room, {});
+    // 单人快速开局：建房时指定 AI 数量，自动补位并开局（即使只有房主一人也能玩）
+    const maxBots = r.room.cfg.players - 1;
+    const want = Math.max(0, Math.min(Number(data.botCount) || 0, maxBots));
+    if (want > 0) {
+      const room = r.room;
+      const seat0 = room.seats.findIndex((s) => !s);
+      if (seat0 >= 0) room.sit(p.id, seat0);
+      for (let i = 0; i < want; i++) room.addBot(p.id, null);
+      room.setReady(p.id, true);
+      room.maybeAutoStart();
+    }
     ack?.({ ok: true, roomId: r.room.id });
   });
 

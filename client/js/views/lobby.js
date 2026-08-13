@@ -78,11 +78,24 @@ export function createLobbyView() {
     const strict = h('input', { type: 'checkbox', checked: true });
     const allowThrow = h('input', { type: 'checkbox', checked: true });
     const specSee = h('input', { type: 'checkbox' });
+    let botN = mode - 1;
+    const botOptions = () => Array.from({ length: mode }, (_, n) =>
+      h('button', {
+        class: n === botN ? 'on' : '',
+        onclick: (e) => {
+          botN = n;
+          [...e.target.parentNode.children].forEach((b) => b.classList.remove('on'));
+          e.target.classList.add('on');
+        },
+      }, n === mode - 1 ? '补满' : `${n} 个`));
+    const botBtns = h('div.mode-pick', {}, botOptions());
     const modeBtns = SUPPORTED_MODES.map((m) =>
       h('button', {
         class: m === 4 ? 'on' : '',
         onclick: (e) => {
           mode = m;
+          botN = Math.min(botN, mode - 1);
+          botBtns.replaceChildren(...botOptions());
           [...e.target.parentNode.children].forEach((b) => b.classList.remove('on'));
           e.target.classList.add('on');
           desc.textContent = MODE_CONFIG[m].label + ` · 每人 ${MODE_CONFIG[m].hand} 张 · 底牌 ${MODE_CONFIG[m].kitty} 张`;
@@ -95,6 +108,8 @@ export function createLobbyView() {
       h('div.field', {}, h('label', {}, '房间名'), nameF),
       h('div.field', {}, h('label', {}, '人数模式'), h('div.mode-pick', {}, modeBtns), desc),
       h('div.field', {}, h('label', {}, '房间密码（可选）'), pwdF),
+      h('div.field', {}, h('label', {}, 'AI 玩家（单人也能开）'), botBtns,
+        h('div.muted.small', {}, '选「补满」= 你 + AI 自动开局；也可选较少数量，进房后再手动「＋ 添加 AI」')),
       h('div.field', {},
         h('label', {}, '玩法选项'),
         h('label.switch', {}, strict, '严格跟牌（对子 / 拖拉机必须跟）'),
@@ -105,7 +120,7 @@ export function createLobbyView() {
         h('button.primary', {
           onclick: async () => {
             const r = await tryCall(EV.LOBBY_CREATE, {
-              name: nameF.value.trim(), mode, password: pwdF.value.trim(),
+              name: nameF.value.trim(), mode, password: pwdF.value.trim(), botCount: botN,
               options: { strictFollow: strict.checked, allowThrow: allowThrow.checked, spectatorSeeAll: specSee.checked },
             });
             if (r) { m2.close(); toast(`房间 ${r.roomId} 已创建`); }
