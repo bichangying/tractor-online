@@ -1,4 +1,4 @@
-import { EV, GEV } from '/shared/constants.js';
+import { EV, GEV, PHASE } from '/shared/constants.js';
 import { store, saveIdentity, randomName } from './store.js';
 import { toast } from './util/dom.js';
 
@@ -37,9 +37,25 @@ export function connect() {
     const prev = store.state.room;
     const patch = { room: snap };
     const g = snap.game;
-    if (!g) patch.hand = [];
-    else if (g.myHand && g.myHand.length >= store.state.hand.length) patch.hand = g.myHand;
-    else if (g.myHand && g.myHand.length === 0 && g.phase !== 'DEALING') patch.hand = [];
+    if (!g) {
+      patch.hand = [];
+    } else if (g.myHand) {
+      // g.myHand 是该视角玩家的权威手牌。
+      // 仅在「发牌动画中途」保留本地由 PRIVATE_CARD 增量构建的结果，避免被局部快照回退；
+      // 其余阶段（出牌后手牌自然变少、新一轮发牌开始 myHand 为空）一律直接采用服务器快照。
+      const dealingPartial = g.phase === PHASE.DEALING
+        && g.myHand.length > 0
+        && g.myHand.length < store.state.hand.length;
+      if (!dealingPartial) {
+        patch.hand = g.myHand;
+        // 顺手清理已不在手牌中的选择，避免高亮已打出的牌
+        if (store.state.selected.size) {
+          const ids = new Set(g.myHand.map((c) => c.id));
+          const kept = new Set([...store.state.selected].filter((id) => ids.has(id)));
+          if (kept.size !== store.state.selected.size) patch.selected = kept;
+        }
+      }
+    }
     if (!prev || prev.room.id !== snap.room.id) patch.selected = new Set();
     if (store.state.view !== 'replay') patch.view = 'room';
     store.set(patch);
