@@ -78,8 +78,34 @@ Zeabur 是台湾团队出品的 Git 一键部署 PaaS，与 Render 同类，对�
 1. 打开 https://zeabur.com ，用 **GitHub 登录**（**免绑卡**，注册即用）。
 2. 控制台 **Create Project** → 选**免费区域：香港 / 新加坡**（离中国最近，延迟最低）。
 3. **Add Service** → **Deploy from GitHub repo** → 选 `tractor-online`（分支 `main`）。
-4. Zeabur **自动识别**框架：检测到 `Dockerfile` 会用 Docker 构建，或识别 Node 跑 `npm install` + `npm start`。两种都行，无需配置文件。
+4. Zeabur 读取仓库根目录的 **`zbpack.json`** 按既定方式构建（见下），无需在控制台填任何构建/启动命令。
 5. 构建完成自动分配**固定子域名**（形如 `https://tractor-online.zeabur.app`）+ 免费 SSL，直接发朋友。
+
+**`zbpack.json`（Zeabur 唯一认的配置文件，切勿改名）**
+
+⚠️ Zeabur **不识别** `zeabur.toml` / `zeabur.yaml` 之类的文件名，配置文件只能叫 `zbpack.json`
+（zbpack = "Zeabur Pack"，官方构建器）。多服务场景可用 `zbpack.[服务名].json` 覆盖，优先级更高。
+
+```json
+{
+  "ignore_dockerfile": true,
+  "build_command": "",
+  "start_command": "node server/index.js"
+}
+```
+
+| 字段 | 作用 |
+|---|---|
+| `ignore_dockerfile: true` | **故意忽略仓库里的 Dockerfile**，走 Zeabur 原生 Node 构建。原因：Zeabur 是额度制，原生构建比 Docker 更快、镜像更小、冷启动更短，省额度。 |
+| `build_command: ""` | 显式声明"没有构建步骤"，防止 Zeabur 误猜去跑 `npm run build`（本项目是纯 JS，无打包） |
+| `start_command` | 钉死启动命令，等价于 `npm start`，避免自动识别抽风 |
+
+依赖安装由 Zeabur 自动完成：仓库有 `package-lock.json`，zbpack 会识别用 **npm** 按 lock 装。
+Node 版本由 `package.json` 的 `engines.node: ">=20.0.0"` 保证（Zeabur 默认取最新 LTS）。
+端口无需配置——服务端读 `process.env.PORT`，Zeabur 自动注入。
+
+想改回 Docker 构建：把 `ignore_dockerfile` 改成 `false`（或删掉整个 `zbpack.json`），
+Zeabur 检测到 `Dockerfile` 就会自动用 Docker 部署。
 
 **免费档实况（2026-08 核实）**
 | 项目 | 额度 |
