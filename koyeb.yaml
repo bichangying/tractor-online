@@ -1,0 +1,38 @@
+# Koyeb Blueprint —— 一键部署（免绑卡，固定 *.koyeb.app 子域名）
+#
+# 部署方式（二选一）：
+#  A. 控制台：Create App → 选 GitHub 仓库 bichangying/tractor-online → Koyeb 读此文件自动建服务。
+#  B. CLI：koyeb app init tractor-online --github bichangying/tractor-online --branch main
+#          koyeb service create tractor-online/web --ports 3000:http --region fra --type web
+#
+# 注意：免费档节点在法兰克福(fra)/华盛顿(was)，中国访问延迟约 200ms+（比 Render 的 singapore 高）。
+# 免费 nano 实例：512MB / 0.1 CPU，原生支持 WebSocket。
+name: tractor-online
+type: web
+git:
+  repository: github.com/bichangying/tractor-online
+  branch: main
+  build_command: npm ci --omit=dev
+  run_command: node server/index.js
+scaling:
+  min: 1          # 保持 1 实例常驻，避免空闲缩零导致冷启动（免费档含 1 个 nano 实例）
+  max: 1
+instance_type: nano
+regions:
+  - fra           # Frankfurt（免费档可用区；was=华盛顿 备选）
+ports:
+  - port: 3000
+    protocol: http
+health_checks:
+  - type: http
+    port: 3000
+    path: /api/health
+    interval: 30
+    timeout: 10
+    healthy_threshold: 2
+    unhealthy_threshold: 3
+env:
+  - key: NODE_ENV
+    value: production
+  - key: PORT
+    value: "3000"
